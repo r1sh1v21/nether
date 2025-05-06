@@ -34,13 +34,18 @@
 {% if posts %}
     {% for post in posts %}
         <div class="post-card">
-            <h4>{{ post.title }}</h4>
-            <small>Posted on {{ post.date }}</small>
-            {% if post.image %}
-                <img src="{{ url_for('static', filename=post.image) }}"
-                     style="max-width: 50%; max-height: 50%; margin: 10px 0; border-radius: 6px;" />
-            {% endif %}
-            <p>{{ post.content[:200] }}...</p>
+        <h3>{{ post.title }}</h3>
+        <p>{{ post.date }}</p> &nbsp;
+
+        <div class="post-buttons">
+            <button type="submit" style="background-color: #94c8eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+                View
+              </button>
+            <button type="submit" style="background-color: #f05d4c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+                Delete
+              </button>
+            </form>
+        </div>
         </div>
     {% endfor %}
 {% else %}

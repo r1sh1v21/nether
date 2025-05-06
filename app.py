@@ -114,6 +114,20 @@ def view_profile(user_id):
 
     return render_template('profile.html', user=user, posts=posts, is_owner=is_owner)
 
+@app.route('/delete_post/<int:post_id>', methods=['POST'])
+def delete_post(post_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    db = get_db()
+    post = db.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
+    
+    if post and post['user_id'] == session['user_id']:
+        db.execute('DELETE FROM posts WHERE id = ?', (post_id,))
+        db.commit()
+    
+    return redirect(url_for('view_profile', user_id=session['user_id']))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -172,6 +186,15 @@ def new_post():
         return redirect(url_for('index'))
 
     return render_template('new.html')
+
+
+@app.route('/post/<int:post_id>')
+def post(post_id):
+    db = get_db()
+    post = db.execute('''SELECT posts.*, users.username, users.profile_pic
+                         FROM posts JOIN users ON posts.user_id = users.id
+                         WHERE posts.id = ?''', (post_id,)).fetchone()
+    return render_template('post.html', post=post)
 
 
 @app.route('/post/<int:post_id>')
