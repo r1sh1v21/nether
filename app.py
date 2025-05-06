@@ -1,50 +1,46 @@
 from flask import Flask, render_template, request, redirect, url_for, session, g, abort
 from datetime import datetime
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import os
 import random
 from werkzeug.utils import secure_filename
 
-
-
-
-
-
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Change this in production
-DATABASE = 'blog.db'
+app.secret_key = 'zzzzzzzz'  
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 # --- Database functions ---
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
 def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
-    return db
+    if 'db' not in g:
+        g.db = psycopg2.connect(DATABASE_URL)
+    return g.db
+
+def get_cursor():
+    return get_db().cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 @app.teardown_appcontext
 def close_connection(exception):
-    db = getattr(g, '_database', None)
+    db = g.pop('db', None)
     if db is not None:
         db.close()
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 # --- Routes ---
 @app.route('/')
 def index():
-    db = get_db()
     posts = []
-
     if 'user_id' in session:
         user_id = session['user_id']
+        cur = get_cursor()
         query = '''
         SELECT posts.id AS id, posts.title, posts.content, posts.date, posts.image,
                users.username,
@@ -52,17 +48,16 @@ def index():
                (SELECT COUNT(*) FROM likes WHERE post_id = posts.id AND value = 'unlike') AS unlike_count
         FROM posts
         JOIN users ON posts.user_id = users.id
-        WHERE posts.user_id = ? OR posts.user_id IN (
-            SELECT user_id FROM friends WHERE friend_id = ? AND status = 'accepted'
+        WHERE posts.user_id = %s OR posts.user_id IN (
+            SELECT user_id FROM friends WHERE friend_id = %s AND status = 'accepted'
             UNION
-            SELECT friend_id FROM friends WHERE user_id = ? AND status = 'accepted'
+            SELECT friend_id FROM friends WHERE user_id = %s AND status = 'accepted'
         )
         ORDER BY posts.date DESC
         '''
-        posts = db.execute(query, (user_id, user_id, user_id)).fetchall()
-
+        cur.execute(query, (user_id, user_id, user_id))
+        posts = cur.fetchall()
     return render_template('index.html', posts=posts)
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -78,26 +73,22 @@ def register():
             file.save(os.path.join('static', 'profile_pics', filename))
             profile_pic_path = f'profile_pics/{filename}'
 
-        db = get_db()
-        existing_user = db.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        cur = get_cursor()
+        cur.execute('SELECT * FROM users WHERE username = %s', (username,))
+        existing_user = cur.fetchone()
         if existing_user:
             error = 'Username already exists.'
         else:
-            db.execute('INSERT INTO users (username, password, profile_pic) VALUES (?, ?, ?)',
-                       (username, password, profile_pic_path))
-            db.commit()
+            cur.execute('INSERT INTO users (username, password, profile_pic) VALUES (%s, %s, %s)',
+                        (username, password, profile_pic_path))
+            g.db.commit()
             return redirect(url_for('login'))
 
     return render_template('register.html', error=error)
 
-
-
-
 @app.route('/profile/<int:user_id>', methods=['GET', 'POST'])
 def view_profile(user_id):
-    db = get_db()
-
-    # Prevent other users from modifying
+    cur = get_cursor()
     is_owner = session.get('user_id') == user_id
 
     if request.method == 'POST' and is_owner:
@@ -106,11 +97,13 @@ def view_profile(user_id):
             filename = secure_filename(file.filename)
             filepath = os.path.join('static', 'profile_pics', filename)
             file.save(filepath)
-            db.execute('UPDATE users SET profile_pic = ? WHERE id = ?', (f'profile_pics/{filename}', user_id))
-            db.commit()
+            cur.execute('UPDATE users SET profile_pic = %s WHERE id = %s', (f'profile_pics/{filename}', user_id))
+            g.db.commit()
 
-    user = db.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-    posts = db.execute('SELECT * FROM posts WHERE user_id = ? ORDER BY date DESC', (user_id,)).fetchall()
+    cur.execute('SELECT * FROM users WHERE id = %s', (user_id,))
+    user = cur.fetchone()
+    cur.execute('SELECT * FROM posts WHERE user_id = %s ORDER BY date DESC', (user_id,))
+    posts = cur.fetchall()
 
     return render_template('profile.html', user=user, posts=posts, is_owner=is_owner)
 
@@ -118,16 +111,13 @@ def view_profile(user_id):
 def delete_post(post_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
-    db = get_db()
-    post = db.execute('SELECT * FROM posts WHERE id = ?', (post_id,)).fetchone()
-    
+    cur = get_cursor()
+    cur.execute('SELECT * FROM posts WHERE id = %s', (post_id,))
+    post = cur.fetchone()
     if post and post['user_id'] == session['user_id']:
-        db.execute('DELETE FROM posts WHERE id = ?', (post_id,))
-        db.commit()
-    
+        cur.execute('DELETE FROM posts WHERE id = %s', (post_id,))
+        g.db.commit()
     return redirect(url_for('view_profile', user_id=session['user_id']))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -135,8 +125,9 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        db = get_db()
-        user = db.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password)).fetchone()
+        cur = get_cursor()
+        cur.execute('SELECT * FROM users WHERE username = %s AND password = %s', (username, password))
+        user = cur.fetchone()
         if user:
             session['logged_in'] = True
             session['user_id'] = user['id']
@@ -146,6 +137,10 @@ def login():
             error = 'Invalid credentials.'
     return render_template('login.html', error=error)
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
 
 @app.route('/banner')
 def show_random_banner():
@@ -156,10 +151,6 @@ def show_random_banner():
     selected = random.choice(images)
     return render_template('banner.html', image_url=url_for('static', filename=f'banners/{selected}'))
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('index'))
 
 @app.route('/new', methods=['GET', 'POST'])
 def new_post():
