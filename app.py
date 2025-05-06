@@ -32,7 +32,13 @@ def close_connection(exception):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
+#-----------
+@app.route('/init_db')
+def init_db():
+    db = get_db()
+    with open('schema.sql', 'r') as f:
+        db.executescript(f.read())
+    return "Database initialized!"
 
 # --- Routes ---
 @app.route('/')
