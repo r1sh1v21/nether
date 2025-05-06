@@ -38,7 +38,7 @@
         <p>{{ post.date }}</p> &nbsp;
 
         <div class="post-buttons">
-            <form method="GET" action="{{ url_for('post', post_id=post.id) }}" style="display:inline;">
+            <form method="GET" action="{{ url_for('view_post', post_id=post.id) }}" style="display:inline;">
             <button type="submit" style="background-color: #94c8eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
                 View
               </button>
