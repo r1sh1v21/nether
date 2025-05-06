@@ -14,7 +14,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 # --- Database functions ---
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.environ.get('postgresql://nether_user:jQ9FtNVd1MaXpd45NmkyJOwRiQFxTUbZ@dpg-d0d79sfdiees73a6rn60-a/nether')
 
 def get_db():
     if 'db' not in g:
