@@ -16,10 +16,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # --- Database functions ---
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
+
 def get_db():
     if 'db' not in g:
-        g.db = psycopg2.connect(DATABASE_URL)
+        g.db = psycopg2.connect(os.environ['DATABASE_URL'], sslmode='require')
     return g.db
+
 
 def get_cursor():
     return get_db().cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -89,7 +91,7 @@ def run_init():
         init_db()
         return "Database initialized!"
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"fffError: {str(e)}"
 
 # --- Routes ---
 @app.route('/')
