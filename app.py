@@ -399,32 +399,7 @@ def friends_page():
                            pending_requests=pending_requests,
                            friends=friends)
 
-# --- Initialize DB (only run once) ---
-def init_db():
-    with app.app_context():
-        db = get_db()
-        db.execute('''CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        username TEXT UNIQUE NOT NULL,
-                        password TEXT NOT NULL
-                    )''')
-        db.execute('''CREATE TABLE IF NOT EXISTS posts (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        title TEXT NOT NULL,
-                        content TEXT NOT NULL,
-                        date TEXT NOT NULL,
-                        user_id INTEGER NOT NULL,
-                        FOREIGN KEY (user_id) REFERENCES users(id)
-                    )''')
-        db.execute('''CREATE TABLE IF NOT EXISTS friends (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER NOT NULL,
-                        friend_id INTEGER NOT NULL,
-                        status TEXT NOT NULL,
-                        FOREIGN KEY (user_id) REFERENCES users(id),
-                        FOREIGN KEY (friend_id) REFERENCES users(id)
-                    )''')
-        db.commit()
+
 
 if __name__ == '__main__':
     if not os.path.exists('templates'):
