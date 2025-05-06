@@ -21,7 +21,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 
 def get_db():
     if 'db' not in g:
-        g.db = psycopg2.connect('postgresql://nether_user:jQ9FtNVd1MaXpd45NmkyJOwRiQFxTUbZ@dpg-d0d79sfdiees73a6rn60-a/nether')
+        g.db = psycopg2.connect(DATABASE_URL, sslmode='require')
     return g.db
 
 
@@ -39,7 +39,7 @@ def allowed_file(filename):
 #-----------
 
 def init_db():
-    db = psycopg2.connect('postgresql://nether_user:jQ9FtNVd1MaXpd45NmkyJOwRiQFxTUbZ@dpg-d0d79sfdiees73a6rn60-a/nether')
+    db = get_db()
     cur = db.cursor()
 
     cur.execute('''
@@ -93,7 +93,7 @@ def run_init():
         init_db()
         return "Database initialized!"
     except Exception as e:
-        return f"fffError: {str(e)}"
+        return f"new Error: {str(e)}"
 
 # --- Routes ---
 @app.route('/')
