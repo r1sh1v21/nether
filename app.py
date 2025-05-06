@@ -33,12 +33,60 @@ def close_connection(exception):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 #-----------
-@app.route('/init_db')
+
 def init_db():
+    db = get_db()
+    cur = db.cursor()
+
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            email TEXT,
+            profile_pic TEXT,
+            aura INTEGER DEFAULT 0
+        )
+    ''')
+
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS posts (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            title TEXT,
+            content TEXT,
+            date TEXT,
+            image TEXT
+        )
+    ''')
+
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS likes (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            post_id INTEGER REFERENCES posts(id),
+            value TEXT CHECK (value IN ('like', 'unlike')),
+            UNIQUE(user_id, post_id)
+        )
+    ''')
+
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS friends (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            friend_id INTEGER REFERENCES users(id),
+            status TEXT
+        )
+    ''')
+
+    db.commit()
+    cur.close()
+
+
+@app.route('/init_db')
+def run_init():
     try:
-        db = get_db()
-        with open('scheme.sql', 'r') as f:
-            db.executescript(f.read())
+        init_db()
         return "Database initialized!"
     except Exception as e:
         return f"Error: {str(e)}"
