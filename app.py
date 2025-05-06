@@ -93,12 +93,27 @@ def register():
 
 
 
-@app.route('/profile/<int:user_id>')
+@app.route('/profile/<int:user_id>', methods=['GET', 'POST'])
 def view_profile(user_id):
     db = get_db()
+
+    # Prevent other users from modifying
+    is_owner = session.get('user_id') == user_id
+
+    if request.method == 'POST' and is_owner:
+        file = request.files.get('profile_pic')
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join('static', 'profile_pics', filename)
+            file.save(filepath)
+            db.execute('UPDATE users SET profile_pic = ? WHERE id = ?', (f'profile_pics/{filename}', user_id))
+            db.commit()
+
     user = db.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
     posts = db.execute('SELECT * FROM posts WHERE user_id = ? ORDER BY date DESC', (user_id,)).fetchall()
-    return render_template('profile.html', user=user, posts=posts)
+
+    return render_template('profile.html', user=user, posts=posts, is_owner=is_owner)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
