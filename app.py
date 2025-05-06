@@ -40,6 +40,7 @@ def allowed_file(filename):
 
 def init_db():
     db = get_db()
+    print(type(get_db()))
     cur = db.cursor()
 
     cur.execute('''
