@@ -39,9 +39,8 @@ def allowed_file(filename):
 #-----------
 
 def init_db():
-    db = get_db()
-    print(type(get_db()))
-    cur = db.get_cursor()
+    db = psycopg2.connect(os.environ['DATABASE_URL'])
+    cur = db.cursor()
 
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
