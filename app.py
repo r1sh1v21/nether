@@ -37,7 +37,7 @@ def allowed_file(filename):
 def init_db():
     try:
         db = get_db()
-        with open('schema.sql', 'r') as f:
+        with open('scheme.sql', 'r') as f:
             db.executescript(f.read())
         return "Database initialized!"
     except Exception as e:
