@@ -35,10 +35,13 @@ def allowed_file(filename):
 #-----------
 @app.route('/init_db')
 def init_db():
-    db = get_db()
-    with open('schema.sql', 'r') as f:
-        db.executescript(f.read())
-    return "Database initialized!"
+    try:
+        db = get_db()
+        with open('schema.sql', 'r') as f:
+            db.executescript(f.read())
+        return "Database initialized!"
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 # --- Routes ---
 @app.route('/')
