@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Search Users{% endblock %}
+
+{% block content %}
+<h2>Search Users</h2>
+<form method="get">
+    <input type="text" name="q" placeholder="Search..." value="{{ query }}">
+    <button type="submit">Search</button>
+</form>
+
+{% for user in users %}
+    <div class="post-card" style="display: flex; justify-content: space-between; align-items: center;">
+        <a href="{{ url_for('view_profile', user_id=user.id) }}" style="text-decoration: none; font-weight: bold;">
+            {{ user.username }}
+        </a>
+
+        {% if user.is_friend %}
+            <span style="color: green; font-weight: bold;">Friends</span>
+        {% else %}
+            <a href="{{ url_for('add_friend', user_id=user.id) }}"
+               style="background-color: #A186A5; color: white; padding: 5px 10px; border-radius: 4px;">
+                Add Friend
+            </a>
+        {% endif %}
+    </div>
+{% endfor %}
+
+{% if not users %}
+    <p>No users found.</p>
+{% endif %}
+{% endblock %}

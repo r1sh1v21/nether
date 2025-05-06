@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<div class="post-detail">
+    {% if post.profile_pic %}
+        <img src="{{ url_for('static', filename=post.profile_pic) }}"
+             alt="Profile Picture"
+             style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; " />
+    {% else %}
+        <div style="width: 100px; height: 100px; background: #ccc; border-radius: 50%; line-height: 120px; text-align: center;">
+            No Image
+        </div>
+    {% endif %}
+    <h2>{{ post.title }}</h2>
+    <small>by {{ post.username }} on {{ post.date }}</small>
+    <p class="post-full">{{ post.content }}</p>
+    {% if post.image %}
+        <img src="{{ url_for('static', filename=post.image) }}" style="max-width: 50%; max-height: 50%;margin-top: 10px;" />
+    {% endif %}
+    <div style="margin-top: 10px; display: flex; gap: 10px;">
+        <form action="{{ url_for('like_post', post_id=post.id) }}" method="get">
+            <button type="submit" style="background-color: #4d4d4d; border: none; padding: 6px 12px; border-radius: 4px; font-family: monospace;">
+                &lt;3 {{ post.like_count }}
+            </button>
+        </form>
+        <form action="{{ url_for('unlike_post', post_id=post.id) }}" method="get">
+            <button type="submit" style="background-color: #4e4e4e; border: none; padding: 6px 12px; border-radius: 4px; font-family: monospace;">
+                &lt;/3 {{ post.unlike_count }}
+            </button>
+        </form>
+    </div>
+    
+</div>
+{% endblock %}

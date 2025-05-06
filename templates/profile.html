@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<h2>{{ user.username }}'s Profile</h2>
+
+<div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+    {% if user.profile_pic %}
+        <img src="{{ url_for('static', filename=user.profile_pic) }}"
+             alt="Profile Picture"
+             style="width: 120px; height: 120px; object-fit: cover; border-radius: 50%; " />
+    {% else %}
+        <div style="width: 120px; height: 120px; background: #ccc; border-radius: 50%; line-height: 120px; text-align: center;">
+            No Image
+        </div>
+    {% endif %}
+
+    <div>
+        <p><strong>{{ user.username }}</strong> </p>
+        <p>Aura: <strong>{{ user.aura }}</strong> </p>
+    </div>
+</div>
+
+<hr style="margin: 40px 0;">
+
+<h3>Posts</h3>
+{% if posts %}
+    {% for post in posts %}
+        <div class="post-card">
+            <h4>{{ post.title }}</h4>
+            <small>Posted on {{ post.date }}</small>
+            {% if post.image %}
+                <img src="{{ url_for('static', filename=post.image) }}"
+                     style="max-width: 50%; max-height: 50%; margin: 10px 0; border-radius: 6px;" />
+            {% endif %}
+            <p>{{ post.content[:200] }}...</p>
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No posts yet.</p>
+{% endif %}
+{% endblock %}

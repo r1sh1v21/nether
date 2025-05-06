@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Friend Requests | Nether{% endblock %}
+
+{% block content %}
+<h2>Friend Requests</h2>
+{% for req in requests %}
+<div class="post-card">
+    <span>{{ req.username }}</span>
+    <a href="{{ url_for('accept_friend', request_id=req.id) }}">Accept</a>
+</div>
+{% endfor %}
+{% if not requests %}
+    <p>No pending requests.</p>
+{% endif %}
+{% endblock %}

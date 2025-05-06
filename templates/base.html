@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}nether{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+  <div id="container">
+    <div id="headerArea">
+        <div id="header" style="height: 184px;"></div>
+        <nav id="navbar" style="margin-bottom: 10px;">
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                {% if session.logged_in %}
+                  <li><a href="{{ url_for('view_profile', user_id=session.get('user_id')) }}">Profile</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('show_random_banner') }}">Random</a></li>
+                {% if session.logged_in %}
+                    <li><a href="{{ url_for('new_post') }}">Post</a></li>
+                    <li><a href="{{ url_for('friends_page') }}">Friends</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                    <li><a href="{{ url_for('register') }}">Register</a></li>
+                {% endif %}
+                
+            </ul>
+        </nav>
+    </div>
+
+    <div id="flex">
+        <main>
+            {% block content %}
+            <h1>Welcome</h1>
+            <p>Default content</p>
+            {% endblock %}
+
+            
+        </main>
+
+        
+    </div>
+    
+    
+    <footer style="text-align: center; padding: 10px; margin-top: 40px; color: #ffffff;">
+      made by <a href="https://r1sh1v21.github.io/cv/">rishiii</a>
+    </footer>
+  </div>
+  
+
+</body>
+</html>

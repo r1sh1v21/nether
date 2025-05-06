@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Friends{% endblock %}
+
+{% block content %}
+<h2>Friends</h2>
+
+<!-- 🔍 Search for new friends -->
+<div style="margin-bottom: 30px;">
+    <form method="get">
+        <input type="text" name="q" placeholder="Search users..." value="{{ query }}" style="padding: 8px;">
+        <button type="submit">Search</button>
+    </form>
+
+    {% if search_results %}
+        <h3>Search Results</h3>
+        {% for user in search_results %}
+            <div class="post-card" style="display: flex; justify-content: space-between; align-items: center;">
+                <a href="{{ url_for('view_profile', user_id=user.id) }}">{{ user.username }}</a>
+                {% if user.is_friend %}
+                    <span style="color: green; font-weight: bold;">Friends</span>
+                {% else %}
+                    <a href="{{ url_for('add_friend', user_id=user.id) }}"
+                       style="background-color: #A186A5; color: white; padding: 5px 10px; border-radius: 4px;">Add Friend</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% elif query %}
+        <p>No users found for "{{ query }}"</p>
+    {% endif %}
+</div>
+
+<!-- 📨 Incoming Friend Requests -->
+{% if pending_requests %}
+    <h3>Friend Requests</h3>
+    {% for req in pending_requests %}
+        <div class="post-card" style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="{{ url_for('view_profile', user_id=req.user_id) }}">{{ req.username }}</a>
+            <a href="{{ url_for('accept_friend', request_id=req.id) }}"
+               style="background-color: #A186A5; color: white; padding: 5px 10px; border-radius: 4px;">Accept</a>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- 🧍 Current Friends -->
+{% if friends %}
+    <h3 style="margin-top: 40px;">Your Friends</h3>
+    {% for friend in friends %}
+        <div class="post-card">
+            <div style="display: flex; align-items: center;">
+                {% if friend.profile_pic %}
+                    <img src="{{ url_for('static', filename=friend.profile_pic) }}"
+                         alt="Profile Picture"
+                         style="width: 25px; height: 25px; object-fit: cover; border-radius: 50%; margin-right: 8px;" />
+                {% else %}
+                    <div style="width: 25px; height: 25px; background: #ccc; border-radius: 50%; line-height: 25px; text-align: center; margin-right: 8px;">
+                    </div>
+                {% endif %}
+                <a href="{{ url_for('view_profile', user_id=friend.id) }}">{{ friend.username }}</a>
+            </div>
+            
+        </div>
+    {% endfor %}
+{% else %}
+    <p style="margin-top: 20px;">You don't have any friends yet. Add someone above!</p>
+{% endif %}
+
+{% endblock %}
