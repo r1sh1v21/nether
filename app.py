@@ -5,6 +5,8 @@ import psycopg2.extras
 import os
 import random
 from werkzeug.utils import secure_filename
+from flask import g
+
 
 app = Flask(__name__)
 app.secret_key = 'zzzzzzzz'  
