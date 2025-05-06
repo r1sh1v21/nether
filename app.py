@@ -38,62 +38,8 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 #-----------
 
-def init_db():
-    db = get_db()
-    cur = db.cursor()
-
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            email TEXT,
-            profile_pic TEXT,
-            aura INTEGER DEFAULT 0
-        )
-    ''')
-
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS posts (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES users(id),
-            title TEXT,
-            content TEXT,
-            date TEXT,
-            image TEXT
-        )
-    ''')
-
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS likes (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES users(id),
-            post_id INTEGER REFERENCES posts(id),
-            value TEXT CHECK (value IN ('like', 'unlike')),
-            UNIQUE(user_id, post_id)
-        )
-    ''')
-
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS friends (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES users(id),
-            friend_id INTEGER REFERENCES users(id),
-            status TEXT
-        )
-    ''')
-
-    db.commit()
-    cur.close()
 
 
-@app.route('/init_db')
-def run_init():
-    try:
-        init_db()
-        return "Database initialized!"
-    except Exception as e:
-        return f"new Error: {str(e)}"
 
 # --- Routes ---
 @app.route('/')
@@ -226,77 +172,71 @@ def new_post():
 
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            image_filename = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(image_filename)
-            image_filename = f'uploads/{filename}'  # relative for HTML
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(image_path)
+            image_filename = f'uploads/{filename}'
 
         user_id = session.get('user_id')
-        db = get_db()
-        db.execute('INSERT INTO posts (title, content, date, user_id, image) VALUES (?, ?, ?, ?, ?)',
-                   (title, content, datetime.now().strftime("%Y-%m-%d %H:%M"), user_id, image_filename))
-        db.commit()
+        cur = get_cursor()
+        cur.execute(
+            'INSERT INTO posts (title, content, date, user_id, image) VALUES (%s, %s, %s, %s, %s)',
+            (title, content, datetime.now().strftime("%Y-%m-%d %H:%M"), user_id, image_filename)
+        )
+        g.db.commit()
         return redirect(url_for('index'))
 
     return render_template('new.html')
 
 
 @app.route('/post/<int:post_id>')
-def post(post_id):
-    db = get_db()
-    post = db.execute('''SELECT posts.*, users.username, users.profile_pic
-                         FROM posts JOIN users ON posts.user_id = users.id
-                         WHERE posts.id = ?''', (post_id,)).fetchone()
-    return render_template('post.html', post=post)
-
-
-@app.route('/post/<int:post_id>')
 def view_post(post_id):
-    db = get_db()
-    
-    post = db.execute('''
-    SELECT posts.id,
-           posts.title,
-           posts.content,
-           posts.date,
-           posts.image,
-           users.username,
-            users.profile_pic,
-           users.id AS user_id,
-           (SELECT COUNT(*) FROM likes WHERE post_id = posts.id AND value = 'like') AS like_count,
-           (SELECT COUNT(*) FROM likes WHERE post_id = posts.id AND value = 'unlike') AS unlike_count
-    FROM posts
-    JOIN users ON posts.user_id = users.id
-    WHERE posts.id = ?
-''', (post_id,)).fetchone()
+    cur = get_cursor()
+    cur.execute('''
+        SELECT posts.id, posts.title, posts.content, posts.date, posts.image,
+               users.username, users.profile_pic, users.id AS user_id,
+               (SELECT COUNT(*) FROM likes WHERE post_id = posts.id AND value = 'like') AS like_count,
+               (SELECT COUNT(*) FROM likes WHERE post_id = posts.id AND value = 'unlike') AS unlike_count
+        FROM posts
+        JOIN users ON posts.user_id = users.id
+        WHERE posts.id = %s
+    ''', (post_id,))
+    post = cur.fetchone()
 
     if not post:
         abort(404)
-    # check permission
+
     if post['user_id'] != session.get('user_id'):
-        is_friend = db.execute('''
+        cur.execute('''
             SELECT 1 FROM friends WHERE
-            (user_id = ? AND friend_id = ? OR friend_id = ? AND user_id = ?) AND status = 'accepted' ''',
-            (session.get('user_id'), post['user_id'], session.get('user_id'), post['user_id'])).fetchone()
+            (user_id = %s AND friend_id = %s OR friend_id = %s AND user_id = %s)
+            AND status = 'accepted'
+        ''', (session.get('user_id'), post['user_id'], session.get('user_id'), post['user_id']))
+        is_friend = cur.fetchone()
         if not is_friend:
             abort(403)
+
     return render_template('post.html', post=post)
-
-
 
 
 @app.route('/add_friend/<int:user_id>')
 def add_friend(user_id):
     if not session.get('logged_in') or user_id == session['user_id']:
         return redirect(url_for('index'))
-    db = get_db()
-    exists = db.execute('''SELECT * FROM friends WHERE
-                           (user_id = ? AND friend_id = ?) OR
-                           (friend_id = ? AND user_id = ?)''',
-                           (session['user_id'], user_id, session['user_id'], user_id)).fetchone()
+
+    cur = get_cursor()
+    cur.execute('''
+        SELECT * FROM friends
+        WHERE (user_id = %s AND friend_id = %s) OR (friend_id = %s AND user_id = %s)
+    ''', (session['user_id'], user_id, session['user_id'], user_id))
+    exists = cur.fetchone()
+
     if not exists:
-        db.execute('INSERT INTO friends (user_id, friend_id, status) VALUES (?, ?, ?)',
-                   (session['user_id'], user_id, 'pending'))
-        db.commit()
+        cur.execute(
+            'INSERT INTO friends (user_id, friend_id, status) VALUES (%s, %s, %s)',
+            (session['user_id'], user_id, 'pending')
+        )
+        g.db.commit()
+
     return redirect(url_for('friends_page'))
 
 
@@ -304,11 +244,16 @@ def add_friend(user_id):
 def accept_friend(request_id):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    db = get_db()
-    db.execute('UPDATE friends SET status = ? WHERE id = ? AND friend_id = ?',
-               ('accepted', request_id, session['user_id']))
-    db.commit()
+
+    cur = get_cursor()
+    cur.execute(
+        'UPDATE friends SET status = %s WHERE id = %s AND friend_id = %s',
+        ('accepted', request_id, session['user_id'])
+    )
+    g.db.commit()
+
     return redirect(url_for('friends_page'))
+
 
 @app.route('/like/<int:post_id>')
 def like_post(post_id):
@@ -318,20 +263,19 @@ def like_post(post_id):
 def unlike_post(post_id):
     return handle_vote(post_id, 'unlike')
 
+
 def handle_vote(post_id, vote_type):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
-    db = get_db()
     user_id = session['user_id']
+    cur = get_cursor()
 
-    # Remove any existing vote by the user
-    db.execute('DELETE FROM likes WHERE user_id = ? AND post_id = ?', (user_id, post_id))
-    db.execute('INSERT INTO likes (user_id, post_id, value) VALUES (?, ?, ?)', (user_id, post_id, vote_type))
-    db.commit()
+    cur.execute('DELETE FROM likes WHERE user_id = %s AND post_id = %s', (user_id, post_id))
+    cur.execute('INSERT INTO likes (user_id, post_id, value) VALUES (%s, %s, %s)', (user_id, post_id, vote_type))
+    g.db.commit()
 
-    # Recalculate aura
-    db.execute('''
+    cur.execute('''
         UPDATE users SET aura = (
             SELECT COUNT(*) FROM posts WHERE user_id = users.id
         ) * (
@@ -344,54 +288,57 @@ def handle_vote(post_id, vote_type):
             WHERE p.user_id = users.id AND l.value = 'unlike'
         )
     ''')
-    db.commit()
+    g.db.commit()
 
     return redirect(request.referrer or url_for('index'))
+
 
 @app.route('/friends', methods=['GET', 'POST'])
 def friends_page():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
-    db = get_db()
     user_id = session['user_id']
-
-    # --- 1. Search ---
     query = request.args.get('q', '')
+    cur = get_cursor()
+
     search_results = []
     if query:
-        found_users = db.execute('SELECT id, username FROM users WHERE username LIKE ?', (f'%{query}%',)).fetchall()
+        cur.execute('SELECT id, username FROM users WHERE username ILIKE %s', (f'%{query}%',))
+        found_users = cur.fetchall()
         for u in found_users:
             if u['id'] == user_id:
                 continue
-            is_friend = db.execute('''SELECT 1 FROM friends WHERE
-                                      ((user_id = ? AND friend_id = ?) OR (friend_id = ? AND user_id = ?))
-                                      AND status = 'accepted' ''',
-                                   (user_id, u['id'], user_id, u['id'])).fetchone()
+            cur.execute('''
+                SELECT 1 FROM friends
+                WHERE ((user_id = %s AND friend_id = %s) OR (friend_id = %s AND user_id = %s))
+                AND status = 'accepted'
+            ''', (user_id, u['id'], user_id, u['id']))
+            is_friend = cur.fetchone()
             search_results.append({
                 'id': u['id'],
                 'username': u['username'],
                 'is_friend': bool(is_friend)
             })
 
-    # --- 2. Incoming friend requests ---
-    pending_requests = db.execute('''
+    cur.execute('''
         SELECT friends.id, users.username, users.id as user_id
         FROM friends
         JOIN users ON users.id = friends.user_id
-        WHERE friends.friend_id = ? AND friends.status = 'pending'
-    ''', (user_id,)).fetchall()
+        WHERE friends.friend_id = %s AND friends.status = 'pending'
+    ''', (user_id,))
+    pending_requests = cur.fetchall()
 
-    # --- 3. Friends list ---
-    friends = db.execute('''
+    cur.execute('''
         SELECT users.id, users.username, users.profile_pic
         FROM users
         JOIN friends ON (
-            (friends.user_id = users.id AND friends.friend_id = ?)
-            OR (friends.friend_id = users.id AND friends.user_id = ?)
+            (friends.user_id = users.id AND friends.friend_id = %s)
+            OR (friends.friend_id = users.id AND friends.user_id = %s)
         )
         WHERE friends.status = 'accepted'
-    ''', (user_id, user_id)).fetchall()
+    ''', (user_id, user_id))
+    friends = cur.fetchall()
 
     return render_template('friends.html',
                            search_results=search_results,
