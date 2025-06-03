@@ -1,56 +1,332 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}nether{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script>NekoType="rose"</script>
-<h1 id=nl><script src="https://webneko.net/n20171213.js"></script></h1>
-    
-</head>
 
-<body>
-  <div id="container">
-    <div id="headerArea">
-        <div id="header" style="height: 184px;"></div>
-        <nav id="navbar" style="margin-bottom: 10px;">
-            <ul>
-                <li><a href="{{ url_for('index') }}">Home</a></li>
-                {% if session.logged_in %}
-                  <li><a href="{{ url_for('view_profile', user_id=session.get('user_id')) }}">Profile</a></li>
-                {% endif %}
-                <li><a href="{{ url_for('show_random_banner') }}">Random</a></li>
-                {% if session.logged_in %}
-                    <li><a href="{{ url_for('new_post') }}">Post</a></li>
-                    <li><a href="{{ url_for('friends_page') }}">Friends</a></li>
-                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
-                {% else %}
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
-                    <li><a href="{{ url_for('register') }}">Register</a></li>
-                {% endif %}
-                
-            </ul>
-        </nav>
-    </div>
+:root {
+  --header-image: url('ta.png');
+  --body-bg-image: url('watercolor.webp');
 
-    <div id="flex">
-        <main>
-            {% block content %}
-            <h1>Welcome</h1>
-            <p>Default content</p>
-            {% endblock %}
+  /* colors */
+  --content: #f4a7c4;
+}
 
-            
-        </main>
+/* if you have the URL of a font, you can set it below */
+/* feel free to delete this if it's not your vibe */
 
-        
-    </div>
-    
-    
-    <footer style="text-align: center; padding: 10px; margin-top: 40px; color: #ffffff;">
-      made by <a href="https://r1sh1v21.github.io/cv/">rishiii</a> (pink version!!)
-    </footer>
-  </div>
-  
-</body>
-</html>
+/* this seems like a lot for just one font and I would have to agree 
+but I wanted to include an example of how to include a custom font.
+If you download a font file you can upload it onto your Neocities
+and then link it! Many fonts have separate files for each style
+(bold, italic, etc. T_T) which is why there are so many!
+
+*/
+
+@font-face {
+  font-family: Nunito;
+  src: url('JetBrainsMono-Regular.ttf');
+}
+
+@font-face {
+  font-family: Nunito;
+  src: url('JetBrainsMono-SemiBold.ttf');
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: Nunito;
+  src: url('JetBrainsMono-Italic.ttf');
+  font-style: italic;
+}
+
+@font-face {
+  font-family: Nunito;
+  src: url('JetBrainsMono-SemiBoldItalic.ttf');
+  font-style: italic;
+  font-weight: bold;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  margin: 0;
+  background-color: #ffffff;
+  /* you can delete the line below if you'd prefer to not use an image */
+  background-size: 65px;
+  color: #ffffff;
+  background-image: var(--body-bg-image);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* below this line is CSS for the layout */
+
+/* this is a CSS comment
+to uncomment a line of CSS, remove the * and the /
+before and after the text */
+
+
+/* the "container" is what wraps your entire website */
+/* if you want something (like the header) to be Wider than
+the other elements, you will need to move that div outside
+of the container */
+#container {
+  max-width: 900px;
+  /* this is the width of your layout! */
+  /* if you change the above value, scroll to the bottom
+and change the media query according to the comment! */
+  margin: 0 auto;
+  /* this centers the entire page */
+}
+
+/* the area below is for all links on your page
+EXCEPT for the navigation */
+#container a {
+  color: #ffffff;
+  font-weight: bold;
+  /* if you want to remove the underline
+you can add a line below here that says:
+text-decoration:none; */
+}
+
+#header {
+  width: 100%;
+  background-image: var(--header-image);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+/* navigation section!! */
+#navbar {
+  height: 40px;
+  background-color: #f4a7c4;
+  /* navbar color */
+  width: 100%;
+}
+
+#navbar ul {
+  display: flex;
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+  justify-content: space-evenly;
+}
+
+#navbar li {
+  padding-top: 10px;
+}
+
+.post-detail {
+  background-color: #e9cbda;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.post-detail h2 {
+  color: #833f44;
+  margin-bottom: 6px;
+}
+
+.post-detail small {
+  color: #494545;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.post-detail .post-full {
+  color: #000000;
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+
+/* navigation links*/
+#navbar li a {
+  color: #ffffff;
+  /* navbar text color */
+  font-weight: 800;
+  text-decoration: none;
+  /* this removes the underline */
+}
+
+/* navigation link when a link is hovered over */
+#navbar li a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+#flex {
+  display: flex;
+}
+
+/* this colors BOTH sidebars
+if you want to style them separately,
+create styles for #leftSidebar and #rightSidebar */
+aside {
+  background-color: #ffffff;
+  width: 200px;
+  padding: 20px;
+  font-size: smaller;
+  /* this makes the sidebar text slightly smaller */
+}
+
+
+/* this is the color of the main content area,
+between the sidebars! */
+main {
+  background-color: #f4a7c4;
+  flex: 1;
+  padding: 20px;
+  order: 2;
+}
+
+
+
+footer {
+  background-color: #f4a7c4;
+  width: 100%;
+  height: 40px;
+  padding: 10px;
+  text-align: center;
+}
+
+h1,
+h2,
+h3 {
+  color: #ffffff;
+}
+
+h1 {
+  font-size: 25px;
+}
+
+strong {
+  /* this styles bold text */
+  color: #ffffff;
+}
+
+/* this is just a cool box, it's the darker colored one */
+.box {
+  background-color: #000000;
+  border: 1px solid #ffffff;
+  padding: 10px;
+}
+
+/* CSS for extras */
+
+#topBar {
+  width: 100%;
+  height: 30px;
+  padding: 10px;
+  font-size: smaller;
+  background-image: var(--body-bg-image);
+}
+
+.post-card {
+  background-color: #e9cbda;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.post-card h3 {
+  margin: 0 0 4px 0;
+  color: #000000;
+  font-size: 20px;
+}
+
+.post-card small {
+  color: #777;
+  margin: 0 0 6px 0;
+  display: block;
+  font-size: 12px;
+}
+
+.post-card p {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.post-card a {
+  text-decoration: none;
+}
+
+/* BELOW THIS POINT IS MEDIA QUERY */
+
+/* so you wanna change the width of your page? 
+by default, the container width is 900px.
+in order to keep things responsive, take your new height,
+and then subtrack it by 100. use this new number as the 
+"max-width" value below
+*/
+
+@media only screen and (max-width: 800px) {
+  #flex {
+      flex-wrap: wrap;
+  }
+
+  aside {
+      width: 100%;
+  }
+
+  /* the order of the items is adjusted here for responsiveness!
+since the sidebars would be too small on a mobile device.
+feel free to play around with the order!
+*/
+  main {
+      order: 1;
+  }
+
+  #leftSidebar {
+      order: 2;
+  }
+
+  #rightSidebar {
+      order: 3;
+  }
+
+  #navbar ul {
+      flex-wrap: wrap;
+  }
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+    width: 100%;
+    background-color: #e7d1d3;
+    color: #ffffff;
+    border: 1px solid #444;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+/* Textarea height */
+textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+/* Submit and Action Buttons */
+button,
+input[type="submit"] {
+    background-color: #d07892;
+    color: #fff;
+    padding: 8px 16px;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover,
+input[type="submit"]:hover {
+    background-color: #d86688;
+}
