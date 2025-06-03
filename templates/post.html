@@ -20,12 +20,12 @@
     {% endif %}
     <div style="margin-top: 10px; display: flex; gap: 10px;">
         <form action="{{ url_for('like_post', post_id=post.id) }}" method="get">
-            <button type="submit" style="background-color: #4d4d4d; border: none; padding: 6px 12px; border-radius: 4px; font-family: monospace;">
+            <button type="submit" style="background-color: #d07892; border: none; padding: 6px 12px; border-radius: 4px; font-family: monospace;">
                 &lt;3 {{ post.like_count }}
             </button>
         </form>
         <form action="{{ url_for('unlike_post', post_id=post.id) }}" method="get">
-            <button type="submit" style="background-color: #4e4e4e; border: none; padding: 6px 12px; border-radius: 4px; font-family: monospace;">
+            <button type="submit" style="background-color: #d07892; border: none; padding: 6px 12px; border-radius: 4px; font-family: monospace;">
                 &lt;/3 {{ post.unlike_count }}
             </button>
         </form>
