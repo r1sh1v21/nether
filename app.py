@@ -159,6 +159,8 @@ def show_random_banner():
     return render_template('banner.html', image_url=url_for('static', filename=f'banners/{selected}'))
 
 
+
+    
 @app.route('/new', methods=['GET', 'POST'])
 def new_post():
     if not session.get('logged_in'):
@@ -180,7 +182,7 @@ def new_post():
         cur = get_cursor()
         cur.execute(
             'INSERT INTO posts (title, content, date, user_id, image) VALUES (%s, %s, %s, %s, %s)',
-            (title, content, datetime.now().strftime("%Y-%m-%d %H:%M"), user_id, image_filename)
+            (title, content, datetime.now(pytz.timezone('Asia/Kolkata')).strftime("%Y-%m-%d %H:%M"), user_id, image_filename)
         )
         g.db.commit()
         return redirect(url_for('index'))
