@@ -3,3 +3,4 @@ gunicorn
 Werkzeug
 psycopg2-binary
 pytz
+requests
