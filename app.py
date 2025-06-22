@@ -14,8 +14,8 @@ app.secret_key = 'zzzzzzzz'
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-token = '7605169368:AAEpkvl7GnWpKGwrUwyZ5zq3WuwomzOmWpU'
-chat_id = '5008093342'
+token = os.environ.get('T_TOKEN')
+chat_id = os.environ.get('C_ID')
 
 # --- Database functions ---
 DATABASE_URL = os.environ.get('DATABASE_URL')
